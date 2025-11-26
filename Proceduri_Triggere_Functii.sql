@@ -1,0 +1,1 @@
+	USE BazaGeo_DB;
