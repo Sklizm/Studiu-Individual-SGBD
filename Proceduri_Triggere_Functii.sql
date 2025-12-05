@@ -23,6 +23,30 @@ BEGIN
 END
 GO
 
+-- Exemplu
+-- Mai întâi adăugăm un furnizor pentru test
+INSERT INTO Furnizor(ID_Furnizor, Denumire_furnizor)
+VALUES ('F1', 'Metro');
+
+-- Rulăm procedura
+EXEC usp_AddMarfa
+    @ID_Marfa = 'M1',
+    @Denumire = 'Lapte 3.5%',
+    @ID_Tip = 'T1',
+    @ID_Furnizor = 'F1',
+    @Pret_unitar = 12.5,
+    @Stoc = 50;
+
+    EXEC usp_AddMarfa
+    @ID_Marfa = 'M2',
+    @Denumire = 'Ouă 10 buc.',
+    @ID_Tip = 'T1',
+    @ID_Furnizor = 'FX',  -- nu există
+    @Pret_unitar = 20,
+    @Stoc = 30;
+
+
+
     -- Procedura: Listarea Intrarilor cu furnizorul
     CREATE PROCEDURE usp_GetIntrariByFurnizor
     @ID_Furnizor VARCHAR(10)
@@ -37,6 +61,15 @@ BEGIN
 END
 GO
 
+-- Exemplu
+INSERT INTO Intrari(ID_Intrare, ID_Furnizor, Data_intrare)
+VALUES ('I1', 'F1', '2025-01-01');
+
+INSERT INTO Intrari(ID_Intrare, ID_Furnizor, Data_intrare)
+VALUES ('I2', 'F1', '2025-02-15');
+EXEC usp_GetIntrariByFurnizor @ID_Furnizor = 'F1';
+
+
     -- Trigger: Actualizarea stocului cand se insereaza o pozitie
     CREATE TRIGGER TR_UpdateStoc_OnInsertPozitie
 ON Pozitii_intrari
@@ -49,6 +82,16 @@ BEGIN
     JOIN inserted I ON M.ID_Marfa = I.ID_Marfa;
 END
 GO
+
+-- Exemplu
+-- Inseram marfa cu stoc mic
+INSERT INTO Marfa(ID_Marfa, Denumire, ID_Tip, ID_Furnizor, Pret_unitar, Stoc)
+VALUES ('M3', 'Zahăr 1kg', 'T2', 'F1', 15, 10);
+-- Inseram o pozitie in Pozitii_Intrari Triggerul va creste stocul
+INSERT INTO Pozitii_intrari(ID_Intrare, ID_Marfa, Cantitate)
+VALUES ('I1', 'M3', 25);
+-- Verificam stocul actualizat
+SELECT * FROM Marfa WHERE ID_Marfa = 'M3';
 
 
     -- Trigger: Nu permite stergerea furnizorilor daca exista marfa asociata
@@ -72,6 +115,15 @@ BEGIN
 END
 GO
 
+-- Exemplu
+DELETE FROM Furnizor WHERE ID_Furnizor = 'F1';
+-- Adăugăm un furnizor fără marfă
+INSERT INTO Furnizor(ID_Furnizor, Denumire_furnizor)
+VALUES ('F2', 'Selgros');
+-- Acum îl ștergem
+DELETE FROM Furnizor WHERE ID_Furnizor = 'F2';
+
+
     -- Functie Scalara: Returneaza denumirea furnizorului dupa ID
     CREATE FUNCTION fn_GetFurnizorName (@ID_Furnizor VARCHAR(10))
 RETURNS VARCHAR(50)
@@ -92,16 +144,16 @@ GO
 
 
     -- Functie Tabelara: Lista marfa pentru un furnizor
-    CREATE FUNCTION fn_MarfaByFurnizor (@ID_Furnizor VARCHAR(10))
+    CREATE FUNCTION fn_MarfaSimpluByFurnizor (@ID_Furnizor VARCHAR(10))
 RETURNS TABLE
 AS
 RETURN
 (
     SELECT ID_Marfa, Denumire, Pret_unitar, Stoc
-    FROM Marfa
+    FROM MarfaSimplu
     WHERE ID_Furnizor = @ID_Furnizor
 );
 GO
 
     -- Exemplu
-    SELECT * FROM dbo.fn_MarfaByFurnizor('FU001');
+    SELECT * FROM dbo.fn_MarfaSimpluByFurnizor('FU001');

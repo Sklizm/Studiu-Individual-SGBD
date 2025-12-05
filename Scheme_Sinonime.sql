@@ -54,8 +54,7 @@ WHERE M.Stoc > 0
 GROUP BY F.Denumire_furnizor
 HAVING SUM(M.Pret_unitar * M.Stoc) > 5000;
 
-SELECT *
-FROM vw_ValoareTotalaStocuri;
+SELECT * FROM vw_ValoareTotalaStocuri;
 
 -- Evidenta intrarilor de marfa
 CREATE VIEW vw_IntrariDetaliate AS
